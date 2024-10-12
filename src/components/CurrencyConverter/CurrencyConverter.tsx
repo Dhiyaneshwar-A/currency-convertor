@@ -4,6 +4,8 @@ import { endpointPath } from "../../config/api";
 import Dropdowns from "../Dropdown/Dropdown";
 import Result from "../Result/Result";
 import moment from "moment";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrencyResult, setCurrencyRate } from "../../actions/currencyActions";
 import "./index.css";
 
 const CurrencyConverter: React.FC = () => {
@@ -11,10 +13,12 @@ const CurrencyConverter: React.FC = () => {
   const [into, setInto] = useState<string>("INR - Indian Rupee (₹)");
   const [loading, setLoading] = useState<boolean>(false);
   const [amount, setAmount] = useState<number>(1);
-  const [currencyResult, setCurrencyResult] = useState<string>("");
-  const [currencyRate, setCurrencyRate] = useState<string>("");
   const [amountValue, setAmountValue] = useState<string>("");
   const [update, setUpdate] = useState<string>("");
+
+  const dispatch = useDispatch();
+  const currencyResult = useSelector((state: any) => state.result);
+  const currencyRate = useSelector((state: any) => state.rate);
 
   const convertCurrency = async (
     from: string,
@@ -25,8 +29,8 @@ const CurrencyConverter: React.FC = () => {
       typeof amount === "string" ? parseFloat(amount) : amount;
 
     if (amountValue === 0 || isNaN(amountValue) || amountValue < 0) {
-      setCurrencyResult("");
-      setCurrencyRate("");
+      dispatch(setCurrencyResult(""));
+      dispatch(setCurrencyRate(""));
       setLoading(false);
       return;
     }
@@ -39,12 +43,13 @@ const CurrencyConverter: React.FC = () => {
       const response = await axios.get(url);
       const parsedData = response.data;
       if (intoValue in parsedData.conversion_rates) {
-        const currencyRate = parsedData.conversion_rates[intoValue];
-        const currencyResult = amountValue * currencyRate;
+        const rate = parsedData.conversion_rates[intoValue];
+        const result = amountValue * rate;
         const parsedUpdate = parsedData.time_last_update_utc;
         const update = moment(parsedUpdate).format("DD/MM/YYYY HH:mm:ss");
-        setCurrencyRate(currencyRate.toFixed(2));
-        setCurrencyResult(currencyResult.toFixed(2));
+        
+        dispatch(setCurrencyRate(rate.toFixed(2)));
+        dispatch(setCurrencyResult(result.toFixed(2)));
         setAmountValue(amountValue.toString());
         setUpdate(update);
       } else {
